@@ -414,4 +414,21 @@ initMap();
 renderFilters(); renderMenu(); renderCart();
 </script>
 </body>
-</html>
+<script>
+  $("order").onclick = () => {
+      const nama = $("nama").value.trim(), alamat = $("alamat").value.trim();
+      if (!nama || (!alamat && !selectedCoords)){ toast(!nama ? "Isi nama pemesan dulu" : "Pilih titik peta atau isi alamat antar"); return; }
+      const pesanan = Object.entries(cart).map(([id, jumlah]) => {
+            const menu = MENU.find(item => item.id === Number(id));
+            return `- ${menu.nama} x${jumlah}: ${rp(menu.harga * jumlah)}`;
+      });
+      const total = Object.entries(cart).reduce((jumlah, [id, qty]) =>
+            jumlah + MENU.find(item => item.id === Number(id)).harga * qty, 0);
+      const pesan = [
+            "Halo All Shop, saya ingin memesan:",
+            "",
+            `Nama: ${nama}`,
+            `Alamat: ${alamat}`,
+            "",
+            "P
+</script></html>
