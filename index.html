@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>All Shop - Pesan Makanan</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22%3E%3Crect width=%22128%22 height=%22128%22 rx=%2228%22 fill=%22%231F5D3A%22/%3E%3Cpath d=%22M50 56V46a14 14 0 0 1 28 0v10%22 fill=%22none%22 stroke=%22%23F5B83D%22 stroke-width=%227%22 stroke-linecap=%22round%22/%3E%3Cpath d=%22M33 52h62l-5 51a7 7 0 0 1-7 6H45a7 7 0 0 1-7-6z%22 fill=%22%23FFFFFF%22/%3E%3Ccircle cx=%2262%22 cy=%2282%22 r=%2211%22 fill=%22none%22 stroke=%22%231F5D3A%22 stroke-width=%226.5%22/%3E%3Cline x1=%2273.5%22 y1=%2270%22 x2=%2273.5%22 y2=%2294%22 stroke=%22%231F5D3A%22 stroke-width=%226.5%22 stroke-linecap=%22round%22/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+/* ===== WARNA (mudah diganti di sini) ===== */
+:root{
+  --bg:#F5F8F2; --card:#FFFFFF; --text:#1B2A20; --muted:#5E6E63;
+  --line:#DCE5D8; --brand:#1F5D3A; --brand-text:#FFFFFF; --accent:#C8261E;
+  --font:"DM Sans","Segoe UI",sans-serif;
+  --display:"DM Serif Display",Georgia,serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#121A15; --card:#1B2620; --text:#EAF1EB; --muted:#98A89D;
+    --line:#2C3B31; --brand:#5FBF86; --brand-text:#0E1A12; --accent:#FF6B61;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#121A15; --card:#1B2620; --text:#EAF1EB; --muted:#98A89D;
+  --line:#2C3B31; --brand:#5FBF86; --brand-text:#0E1A12; --accent:#FF6B61;
+}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);line-height:1.5}
+button{font:inherit;cursor:pointer}
+button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+/* ===== HEADER ===== */
+header{display:flex;justify-content:space-between;align-items:center;gap:12px;
+  padding:14px 20px;background:var(--card);color:var(--text);border-bottom:1px solid var(--line);box-shadow:0 2px 12px #1b2a2012}
+.brand{display:flex;align-items:center;min-width:0}
+.brand-mark{display:block;width:174px;height:auto;flex:none}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.cart-btn{background:var(--brand);color:var(--brand-text);border:0;border-radius:999px;
+  padding:8px 16px;font-weight:700}
+@media (max-width:380px){
+  header{padding:12px 14px;gap:8px}
+  .brand-mark{width:148px}
+  .cart-btn{padding:8px 11px}
+}
+
+/* ===== MENU DAN PENGANTARAN ===== */
+main{max-width:1160px;margin:0 auto;padding:28px 24px 48px}
+.page-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:20px}
+.eyebrow{display:block;margin:0 0 5px;color:var(--accent);font-size:.72rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.page-heading h2{margin:0;font-family:var(--display);font-size:clamp(1.8rem,4vw,2.55rem);font-weight:400;line-height:1.08}
+.service-note{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:.88rem;white-space:nowrap}
+.service-dot{width:9px;height:9px;border-radius:50%;background:#5EAA63;box-shadow:0 0 0 4px #5eaa6320}
+.location-panel{display:grid;grid-template-columns:minmax(220px,.8fr) minmax(0,1.4fr);align-items:stretch;gap:20px;
+  margin-bottom:24px;padding:14px;background:var(--card);border:1px solid var(--line);border-radius:12px}
+.location-copy{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;padding:12px 8px 12px 12px}
+.location-title{display:flex;align-items:center;gap:8px;margin:0 0 4px;font-size:1.05rem}
+.location-title svg{width:19px;height:19px;color:var(--accent)}
+.location-name{margin:0;font-size:1.35rem;font-weight:800;line-height:1.25}
+.location-detail{min-height:22px;margin:4px 0 16px;color:var(--muted);font-size:.82rem}
+.locate-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:8px 13px;
+  border:0;border-radius:8px;background:var(--brand);color:var(--brand-text);font-weight:700}
+.locate-btn svg{width:17px;height:17px}
+.locate-btn:disabled{opacity:.65;cursor:wait}
+.map-shell{position:relative;min-width:0;overflow:hidden;border:1px solid #dfe5dc;border-radius:9px;background:#e9eee5}
+#map{height:276px;width:100%;z-index:1;background:#e9eee5}
+.leaflet-top.leaflet-left{top:auto;right:10px;bottom:10px;left:auto}
+.leaflet-top.leaflet-left .leaflet-control{margin:0}
+.leaflet-control-zoom{overflow:hidden;border:0!important;border-radius:8px!important;box-shadow:0 1px 5px #26352835!important}
+.leaflet-control-zoom a{width:34px!important;height:34px!important;line-height:34px!important;color:#34433a!important}
+.leaflet-control-attribution{font-size:9px!important}
+.map-fallback{position:absolute;inset:0;display:grid;place-items:center;padding:20px;text-align:center;color:#435d49;
+  background-color:#e8eee0;background-image:linear-gradient(35deg,transparent 48%,#fff9 49%,#fff9 51%,transparent 52%),linear-gradient(120deg,transparent 48%,#cad7c4 49%,#cad7c4 51%,transparent 52%);background-size:90px 70px,120px 95px}
+.map-fallback span{max-width:260px;padding:10px 14px;border-radius:8px;background:#fff;color:#435d49;font-size:.84rem;box-shadow:0 2px 10px #1b2a2020}
+.map-instruction{position:absolute;left:10px;bottom:10px;z-index:500;padding:6px 9px;border:1px solid #ffffffb0;border-radius:6px;
+  background:#fff;color:#435d49;font-size:.72rem;box-shadow:0 1px 5px #1b2a2020;pointer-events:none}
+.map-center{position:absolute;top:10px;right:10px;z-index:500;display:grid;width:38px;height:38px;place-items:center;
+  border:0;border-radius:8px;background:#fff;color:#3b4a40;box-shadow:0 1px 5px #26352835}
+.map-center svg{width:20px;height:20px}
+.map-marker{display:grid;width:30px;height:38px;place-items:center;border:3px solid #fff;border-radius:50% 50% 50% 4px;
+  background:var(--accent);box-shadow:0 2px 7px #0005;transform:rotate(-45deg)}
+.map-marker span{width:8px;height:8px;border-radius:50%;background:#fff}
+.search-box{display:flex;align-items:center;gap:11px;min-height:54px;padding:0 15px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+.search-box:focus-within{border-color:var(--brand);box-shadow:0 0 0 3px #1f5d3a18}
+.search-box>svg{width:20px;height:20px;flex:none;color:var(--muted)}
+.search-box input{min-width:0;margin:0;padding:13px 0;border:0;outline:0;background:transparent;font:inherit;color:var(--text)}
+.search-box input:focus-visible{outline:0}
+.search-box input::placeholder{color:var(--muted)}
+.clear-search{width:30px;height:30px;flex:none;border:0;border-radius:50%;background:var(--bg);color:var(--muted);font-size:1.25rem;line-height:1}
+.clear-search[hidden]{display:none}
+.filters{display:flex;gap:8px;overflow-x:auto;margin:16px 0 22px;padding:1px 1px 5px;scrollbar-width:thin}
+.chip{flex:none;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--text);padding:8px 14px;font-size:.88rem;font-weight:600}
+.chip.active{border-color:var(--brand);background:var(--brand);color:var(--brand-text)}
+.menu-heading{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:13px}
+.menu-heading h2{margin:0;font-size:1.22rem}
+.result-count{margin:0;color:var(--muted);font-size:.85rem}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+.item{min-width:0;overflow:hidden;border:1px solid var(--line);border-radius:10px;background:var(--card);display:flex;flex-direction:column;transition:transform .18s,border-color .18s}
+.item:hover{transform:translateY(-3px);border-color:#a9c2aa}
+.photo{position:relative;aspect-ratio:1.45;background:#e9eee4;overflow:hidden;display:grid;place-items:center}
+.photo-fallback{position:absolute;font-size:3rem}
+.photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.category-tag{position:absolute;top:9px;left:9px;z-index:1;padding:4px 8px;border-radius:5px;background:#fff;color:#31523b;font-size:.67rem;font-weight:800}
+.item-body{display:flex;flex:1;flex-direction:column;padding:12px;gap:6px}
+.item h3{margin:0;font-size:.98rem;line-height:1.3}
+.item p{min-height:36px;margin:0;color:var(--muted);font-size:.8rem;line-height:1.45}
+.item-meta{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:.72rem}
+.item-meta strong{color:#9b6812}
+.item-bottom{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:auto;padding-top:6px}
+.price{font-weight:800;color:var(--text);font-size:.95rem}
+.add{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-height:36px;border:0;border-radius:7px;padding:7px 10px;background:var(--brand);color:var(--brand-text);font-size:.79rem;font-weight:700}
+.add span{font-size:1.1rem;line-height:1}
+.empty-state{grid-column:1/-1;padding:38px 16px;border:1px dashed var(--line);border-radius:10px;text-align:center;color:var(--muted)}
+.empty-state strong{display:block;margin-bottom:4px;color:var(--text)}
+.reset-link{margin-top:10px;border:0;background:none;color:var(--brand);font:inherit;font-weight:700;text-decoration:underline}
+
+/* ===== KERANJANG (panel samping) ===== */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;z-index:20}
+.overlay.open{display:block}
+aside{position:fixed;top:0;right:0;bottom:0;width:min(380px,100%);background:var(--card);
+  color:var(--text);padding:calc(18px + env(safe-area-inset-top,0px)) 18px calc(18px + env(safe-area-inset-bottom,0px));
+  display:flex;flex-direction:column;gap:12px;transform:translateX(100%);
+  transition:transform .25s;z-index:30}
+aside.open{transform:none}
+.aside-head{display:flex;justify-content:space-between;align-items:center}
+.aside-head h2{margin:0;font-size:1.2rem}
+.close{background:none;border:0;color:var(--text);font-size:1.6rem}
+#cart-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px;
+  border-bottom:1px solid var(--line);padding-bottom:10px}
+.row small{color:var(--muted)}
+.qty{display:flex;align-items:center;gap:8px}
+.qty button{width:28px;height:28px;border-radius:50%;border:1px solid var(--line);
+  background:var(--bg);color:var(--text)}
+.empty{color:var(--muted);text-align:center;margin-top:30px}
+.total{display:flex;justify-content:space-between;font-weight:700;font-size:1.1rem}
+label{display:block;font-size:.85rem;color:var(--muted)}
+input,textarea{width:100%;padding:9px;border:1px solid var(--line);border-radius:8px;
+  background:var(--bg);color:var(--text);font:inherit;margin-top:3px}
+.order{background:var(--accent);color:#fff;border:0;border-radius:10px;padding:12px;font-weight:700}
+.order:disabled{opacity:.5;cursor:not-allowed}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));
+  transform:translateX(-50%);background:var(--text);color:var(--bg);padding:10px 18px;
+  border-radius:999px;display:none;z-index:40}
+@media (max-width:900px){
+  main{max-width:760px}
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:600px){
+  header{padding:12px 16px}
+  main{padding:22px 16px 36px}
+  .page-heading{align-items:flex-start;flex-direction:column;gap:8px}
+  .location-panel{grid-template-columns:1fr;gap:10px;padding:11px}
+  .location-copy{padding:8px 5px 2px}
+  #map{height:230px}
+  .grid{gap:11px}
+  .item-body{padding:10px;gap:5px}
+  .item h3{font-size:.9rem}
+  .item p{font-size:.75rem}
+  .item-bottom{align-items:flex-end;flex-direction:column}
+  .add{width:100%}
+}
+@media (max-width:380px){
+  header{padding:12px 14px;gap:8px}
+  .brand{gap:8px}
+  .brand-mark{width:40px;height:40px}
+  .brand h1{font-size:1.1rem}
+  .cart-btn{padding:8px 11px}
+  main{padding-right:12px;padding-left:12px}
+  .grid{grid-template-columns:1fr}
+  .item-bottom{align-items:center;flex-direction:row}
+  .add{width:auto}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <svg class="brand-mark" viewBox="0 0 470 128" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+      <rect width="128" height="128" rx="28" fill="#1F5D3A"/>
+      <path d="M50 56V46a14 14 0 0 1 28 0v10" fill="none" stroke="#F5B83D" stroke-width="7" stroke-linecap="round"/>
+      <path d="M33 52h62l-5 51a7 7 0 0 1-7 6H45a7 7 0 0 1-7-6z" fill="#FFFFFF"/>
+      <circle cx="62" cy="82" r="11" fill="none" stroke="#1F5D3A" stroke-width="6.5"/>
+      <line x1="73.5" y1="70" x2="73.5" y2="94" stroke="#1F5D3A" stroke-width="6.5" stroke-linecap="round"/>
+      <text x="150" y="88" font-family="'Trebuchet MS','Segoe UI',Arial,sans-serif" font-size="68" font-weight="800" letter-spacing="-1">
+        <tspan fill="#1F5D3A">all</tspan><tspan fill="#C8261E">shop</tspan>
+      </text>
+    </svg>
+    <h1 class="sr-only">All Shop</h1>
+  </div>
+  <button class="cart-btn" id="open-cart">Keranjang (<span id="count">0</span>)</button>
+</header>
+
+<main>
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">Lapar? All Shop siap bantu</p>
+      <h2>Hari ini mau makan apa?</h2>
+    </div>
+    <div class="service-note"><span class="service-dot" aria-hidden="true"></span>Pesan sekarang, nikmati nanti</div>
+  </section>
+  <section class="location-panel" aria-label="Lokasi pengantaran">
+    <div class="location-copy">
+      <p class="eyebrow">KIRIM KE</p>
+      <h2 class="location-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+        <span>Lokasi antar</span>
+      </h2>
+      <p class="location-name" id="location-label">Tentukan titik antar</p>
+      <p class="location-detail" id="location-detail">Pilih titik tujuan di peta</p>
+      <button class="locate-btn" id="locate-btn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2"/></svg>
+        Gunakan lokasi saya
+      </button>
+    </div>
+    <div class="map-shell">
+      <div id="map" role="application" aria-label="Peta untuk memilih titik pengantaran"></div>
+      <div class="map-fallback" id="map-fallback"><span>Peta sedang dimuat. Pastikan perangkat terhubung ke internet.</span></div>
+      <div class="map-instruction">Ketuk peta untuk menaruh pin</div>
+      <button class="map-center" id="map-center" type="button" aria-label="Pusatkan ke lokasi saya" title="Pusatkan ke lokasi saya">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="2.2"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2"/></svg>
+      </button>
+    </div>
+  </section>
+  <label class="search-box" aria-label="Cari makanan">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg>
+    <input id="search" type="search" placeholder="Cari nasi goreng, es teh, camilan..." autocomplete="off">
+    <button class="clear-search" id="clear-search" type="button" aria-label="Hapus pencarian" hidden>&times;</button>
+  </label>
+  <div class="filters" id="filters"></div>
+  <div class="menu-heading"><h2>Menu favorit</h2><p class="result-count" id="result-count"></p></div>
+  <div class="grid" id="menu"></div>
+</main>
+
+<div class="overlay" id="overlay"></div>
+<aside id="cart" aria-label="Keranjang belanja">
+  <div class="aside-head">
+    <h2>Keranjang</h2>
+    <button class="close" id="close-cart" aria-label="Tutup keranjang">&times;</button>
+  </div>
+  <div id="cart-list"></div>
+  <div class="total"><span>Total</span><span id="total">Rp0</span></div>
+  <label>Nama <input id="nama" placeholder="Nama pemesan"></label>
+  <label>Alamat antar <textarea id="alamat" rows="2" placeholder="Alamat lengkap"></textarea></label>
+  <button class="order" id="order" disabled>Pesan sekarang</button>
+</aside>
+<div class="toast" id="toast"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+/* ===== DATA MENU (tambah/ubah makanan di sini) ===== */
+const MENU = [
+  {id:1, nama:"Nasi Goreng Spesial", harga:25000, kat:"Makanan Berat", icon:"🍳", desc:"Telur, ayam suwir, dan kerupuk.", rating:"4.9", waktu:"20 mnt", foto:"https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=720&q=80"},
+  {id:2, nama:"Mie Ayam Bakso", harga:22000, kat:"Makanan Berat", icon:"🍜", desc:"Mie kenyal, ayam kecap, dua bakso.", rating:"4.8", waktu:"18 mnt", foto:"https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=720&q=80"},
+  {id:3, nama:"Ayam Geprek", harga:23000, kat:"Makanan Berat", icon:"🍗", desc:"Ayam krispi dengan sambal bawang.", rating:"4.9", waktu:"22 mnt", foto:"https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?auto=format&fit=crop&w=720&q=80"},
+  {id:4, nama:"Sate Ayam (10 tusuk)", harga:28000, kat:"Makanan Berat", icon:"🍢", desc:"Bumbu kacang dan lontong.", rating:"4.7", waktu:"25 mnt", foto:"https://images.unsplash.com/photo-1529042410759-befb1204b468?auto=format&fit=crop&w=720&q=80"},
+  {id:5, nama:"Pisang Goreng", harga:12000, kat:"Camilan", icon:"🍌", desc:"Pisang kepok goreng renyah.", rating:"4.8", waktu:"15 mnt", foto:"https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=720&q=80"},
+  {id:6, nama:"Martabak Mini", harga:15000, kat:"Camilan", icon:"🥞", desc:"Isi cokelat dan keju.", rating:"4.8", waktu:"18 mnt", foto:"https://images.unsplash.com/photo-1601050690117-94f5f6fa8bd7?auto=format&fit=crop&w=720&q=80"},
+  {id:7, nama:"Es Teh Manis", harga:5000, kat:"Minuman", icon:"🧋", desc:"Teh segar dengan es batu.", rating:"4.9", waktu:"10 mnt", foto:"https://images.unsplash.com/photo-1556679343-c7306c1976bc?auto=format&fit=crop&w=720&q=80"},
+  {id:8, nama:"Es Jeruk", harga:8000, kat:"Minuman", icon:"🍊", desc:"Jeruk peras asli.", rating:"4.8", waktu:"12 mnt", foto:"https://images.unsplash.com/photo-1600271886742-f049cd451bba?auto=format&fit=crop&w=720&q=80"}
+];
+
+/* ===== STATE ===== */
+let cart = {};            // { idMenu: jumlah }
+let kategori = "Semua";
+let selectedCoords = null;
+let locationPrefill = "";
+let deliveryMap = null;
+let deliveryMarker = null;
+
+const rp = n => "Rp" + n.toLocaleString("id-ID");
+const $ = id => document.getElementById(id);
+
+/* ===== TAMPILKAN FILTER & MENU ===== */
+function renderFilters(){
+  const list = ["Semua", ...new Set(MENU.map(m => m.kat))];
+  $("filters").innerHTML = list.map(k =>
+    `<button class="chip ${k===kategori?"active":""}" data-k="${k}">${k}</button>`).join("");
+}
+function renderMenu(){
+  const query = $("search").value.trim().toLocaleLowerCase("id-ID");
+  const data = MENU.filter(m => (kategori==="Semua" || m.kat===kategori) &&
+    (!query || `${m.nama} ${m.kat} ${m.desc}`.toLocaleLowerCase("id-ID").includes(query)));
+  $("result-count").textContent = `${data.length} menu tersedia`;
+  $("clear-search").hidden = !query;
+  $("menu").innerHTML = data.length ? data.map(m => `
+    <article class="item">
+      <div class="photo">
+        <span class="photo-fallback" aria-hidden="true">${m.icon}</span>
+        <img src="${m.foto}" alt="${m.nama}" loading="lazy" onerror="this.hidden=true">
+        <span class="category-tag">${m.kat}</span>
+      </div>
+      <div class="item-body">
+        <h3>${m.nama}</h3>
+        <p>${m.desc}</p>
+        <div class="item-meta"><strong>★ ${m.rating}</strong><span>${m.waktu}</span></div>
+        <div class="item-bottom"><span class="price">${rp(m.harga)}</span>
+          <button class="add" data-add="${m.id}"><span aria-hidden="true">+</span>Tambah</button>
+        </div>
+      </div>
+    </article>`).join("") : `<div class="empty-state"><strong>Menu belum ditemukan</strong>Coba kata kunci atau kategori lain.<br><button class="reset-link" data-reset-search type="button">Tampilkan semua menu</button></div>`;
+}
+
+function updateDeliveryPoint(lat, lng, label){
+  selectedCoords = {lat, lng};
+  if (deliveryMarker) deliveryMarker.setLatLng([lat, lng]);
+  $("location-label").textContent = label;
+  $("location-detail").textContent = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+  const address = $("alamat");
+  if (!address.value.trim() || address.value === locationPrefill){
+    locationPrefill = `${label} (${lat.toFixed(5)}, ${lng.toFixed(5)})`;
+    address.value = locationPrefill;
+  }
+}
+
+function initMap(){
+  if (!window.L){
+    $("map-fallback").querySelector("span").textContent = "Peta tidak dapat dimuat. Periksa koneksi internet lalu muat ulang halaman.";
+    return;
+  }
+  const initial = [-6.2000, 106.8167];
+  deliveryMap = L.map("map", {scrollWheelZoom:false}).setView(initial, 13);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom:19,
+    attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'
+  }).addTo(deliveryMap);
+  deliveryMarker = L.marker(initial, {icon:L.divIcon({className:"", html:'<span class="map-marker"><span></span></span>', iconSize:[30,38], iconAnchor:[15,36]})}).addTo(deliveryMap);
+  deliveryMarker.setOpacity(.55);
+  deliveryMap.on("click", event => {
+    deliveryMarker.setOpacity(1);
+    updateDeliveryPoint(event.latlng.lat, event.latlng.lng, "Titik antar dipilih");
+  });
+  $("map-fallback").remove();
+}
+
+/* ===== KERANJANG ===== */
+function renderCart(){
+  const ids = Object.keys(cart);
+  let total = 0, jumlah = 0;
+  $("cart-list").innerHTML = ids.length ? ids.map(id => {
+    const m = MENU.find(x => x.id == id), q = cart[id];
+    total += m.harga * q; jumlah += q;
+    return `<div class="row">
+      <div>${m.icon} ${m.nama}<br><small>${rp(m.harga)}</small></div>
+      <div class="qty">
+        <button data-dec="${id}" aria-label="Kurangi">-</button>
+        <span>${q}</span>
+        <button data-inc="${id}" aria-label="Tambah">+</button>
+      </div></div>`;
+  }).join("") : `<p class="empty">Keranjang masih kosong. Pilih menu dulu, ya.</p>`;
+  $("total").textContent = rp(total);
+  $("count").textContent = jumlah;
+  $("order").disabled = !ids.length;
+}
+function toast(msg){
+  const t = $("toast"); t.textContent = msg; t.style.display = "block";
+  clearTimeout(toast.t); toast.t = setTimeout(() => t.style.display = "none", 2000);
+}
+function openCart(open){
+  $("cart").classList.toggle("open", open);
+  $("overlay").classList.toggle("open", open);
+}
+
+/* ===== EVENT ===== */
+document.addEventListener("click", e => {
+  const button = e.target.closest("button");
+  if (!button) return;
+  const d = button.dataset;
+  if (d.k !== undefined){ kategori = d.k; renderFilters(); renderMenu(); }
+  if (d.add){ cart[d.add] = (cart[d.add]||0) + 1; renderCart(); toast("Ditambahkan ke keranjang"); }
+  if (d.inc){ cart[d.inc]++; renderCart(); }
+  if (d.dec){ if(--cart[d.dec] <= 0) delete cart[d.dec]; renderCart(); }
+  if (d.resetSearch !== undefined){ $("search").value = ""; kategori = "Semua"; renderFilters(); renderMenu(); }
+});
+$("search").addEventListener("input", renderMenu);
+$("clear-search").onclick = () => { $("search").value = ""; renderMenu(); $("search").focus(); };
+function locateUser(){
+  if (!navigator.geolocation){ toast("Lokasi tidak didukung di perangkat ini"); return; }
+  $("locate-btn").disabled = true;
+  navigator.geolocation.getCurrentPosition(position => {
+    const {latitude, longitude} = position.coords;
+    if (deliveryMap) deliveryMap.flyTo([latitude, longitude], 16);
+    if (deliveryMarker) deliveryMarker.setOpacity(1);
+    updateDeliveryPoint(latitude, longitude, "Lokasi saya");
+    $("locate-btn").disabled = false;
+  }, () => {
+    $("locate-btn").disabled = false;
+    toast("Lokasi tidak ditemukan. Coba pilih titik di peta");
+  }, {enableHighAccuracy:true, timeout:10000});
+}
+$("locate-btn").onclick = locateUser;
+$("map-center").onclick = locateUser;
+$("open-cart").onclick = () => openCart(true);
+$("close-cart").onclick = $("overlay").onclick = () => openCart(false);
+
+$("order").onclick = () => {
+  const nama = $("nama").value.trim(), alamat = $("alamat").value.trim();
+  if (!nama || (!alamat && !selectedCoords)){ toast(!nama ? "Isi nama pemesan dulu" : "Pilih titik peta atau isi alamat antar"); return; }
+  const pesanan = Object.entries(cart).map(([id, jumlah]) => {
+    const menu = MENU.find(item => item.id === Number(id));
+    return `- ${menu.nama} x${jumlah}: ${rp(menu.harga * jumlah)}`;
+  });
+  const total = Object.entries(cart).reduce((jumlah, [id, qty]) =>
+    jumlah + MENU.find(item => item.id === Number(id)).harga * qty, 0);
+  const pesan = [
+    "Halo All Shop, saya ingin memesan:",
+    "",
+    `Nama: ${nama}`,
+    `Alamat: ${alamat}`,
+    "",
+    "Pesanan:",
+    ...pesanan,
+    "",
+    `Total: ${rp(total)}`
+  ].join("\n");
+  const whatsappUrl = `https://wa.me/6285133968901?text=${encodeURIComponent(pesan)}`;
+  window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+  toast("Pesanan dibuka di WhatsApp. Tekan Kirim untuk mengirimnya.");
+};
+
+initMap();
+renderFilters(); renderMenu(); renderCart();
+</script>
+</body>
+</html>
