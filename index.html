@@ -276,6 +276,14 @@ let selectedCoords = null;
 let locationPrefill = "";
 let deliveryMap = null;
 let deliveryMarker = null;
+let favorites = new Set();
+let activeDetailId = null;
+let detailQuantity = 1;
+let lastDetailFocus = null;
+try{
+  const savedFavorites = JSON.parse(localStorage.getItem("allshop-favorites") || "[]");
+  if (Array.isArray(savedFavorites)) favorites = new Set(savedFavorites.map(Number));
+}catch{}
 
 const rp = n => "Rp" + n.toLocaleString("id-ID");
 const $ = id => document.getElementById(id);
@@ -293,11 +301,19 @@ function renderMenu(){
   $("result-count").textContent = `${data.length} menu tersedia`;
   $("clear-search").hidden = !query;
   $("menu").innerHTML = data.length ? data.map(m => `
-    <article class="item">
+    <article class="item" data-item="${m.id}" tabindex="0" aria-label="Lihat detail ${m.nama}">
       <div class="photo">
         <span class="photo-fallback" aria-hidden="true">${m.icon}</span>
         <img src="${m.foto}" alt="${m.nama}" loading="lazy" onerror="this.hidden=true">
         <span class="category-tag">${m.kat}</span>
+        <div class="photo-actions">
+          <button class="photo-action ${favorites.has(m.id)?"is-favorite":""}" data-favorite="${m.id}" type="button" aria-label="${favorites.has(m.id)?"Hapus dari":"Simpan ke"} favorit" aria-pressed="${favorites.has(m.id)}" title="Favorit">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z"/></svg>
+          </button>
+          <button class="photo-action" data-share-menu="${m.id}" type="button" aria-label="Bagikan ${m.nama}" title="Bagikan">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.7 10.7 6.6-4.4m-6.6 9.4 6.6 2.2"/></svg>
+          </button>
+        </div>
       </div>
       <div class="item-body">
         <h3>${m.nama}</h3>
@@ -308,6 +324,93 @@ function renderMenu(){
         </div>
       </div>
     </article>`).join("") : `<div class="empty-state"><strong>Menu belum ditemukan</strong>Coba kata kunci atau kategori lain.<br><button class="reset-link" data-reset-search type="button">Tampilkan semua menu</button></div>`;
+}
+
+function updateDetailFavorite(){
+  if (activeDetailId === null) return;
+  const button = $("detail-favorite"), isFavorite = favorites.has(activeDetailId);
+  button.classList.toggle("is-favorite", isFavorite);
+  button.setAttribute("aria-pressed", String(isFavorite));
+  button.setAttribute("aria-label", isFavorite ? "Hapus dari favorit" : "Simpan ke favorit");
+}
+
+function toggleFavorite(id){
+  if (favorites.has(id)) favorites.delete(id);
+  else favorites.add(id);
+  try{ localStorage.setItem("allshop-favorites", JSON.stringify([...favorites])); }catch{}
+  renderMenu();
+  updateDetailFavorite();
+  toast(favorites.has(id) ? "Ditambahkan ke favorit" : "Dihapus dari favorit");
+}
+
+function openMenuDetail(id, focusShare=false){
+  const item = MENU.find(menu => menu.id === id);
+  if (!item) return;
+  lastDetailFocus = document.activeElement;
+  activeDetailId = id;
+  detailQuantity = 1;
+  $("detail-image").src = item.foto;
+  $("detail-image").alt = item.nama;
+  $("detail-image").hidden = false;
+  $("detail-icon").textContent = item.icon;
+  $("detail-category").textContent = item.kat;
+  $("detail-name").textContent = item.nama;
+  $("detail-description").textContent = item.desc;
+  $("detail-rating").textContent = `★ ${item.rating}`;
+  $("detail-time").textContent = item.waktu;
+  $("detail-price").textContent = rp(item.harga);
+  $("detail-add").dataset.detailAdd = id;
+  const shareUrl = `${location.origin}${location.pathname}#menu-${id}`;
+  const shareText = `${item.nama} - ${rp(item.harga)} di All Shop: ${shareUrl}`;
+  $("share-facebook").href = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
+  $("share-whatsapp").href = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
+  $("copy-menu-link").dataset.copyUrl = shareUrl;
+  updateDetailFavorite();
+  updateDetailQuantity();
+  $("detail-backdrop").hidden = false;
+  document.body.classList.add("modal-open");
+  $(focusShare ? "share-native" : "detail-close").focus();
+}
+
+function closeMenuDetail(){
+  $("detail-backdrop").hidden = true;
+  activeDetailId = null;
+  if ($("checkout-backdrop").hidden) document.body.classList.remove("modal-open");
+  if (lastDetailFocus && lastDetailFocus.isConnected) lastDetailFocus.focus();
+}
+
+function updateDetailQuantity(){
+  const item = MENU.find(menu => menu.id === activeDetailId);
+  if (!item) return;
+  $("detail-quantity").textContent = detailQuantity;
+  $("detail-add").textContent = `Tambah ${detailQuantity} ke keranjang · ${rp(item.harga * detailQuantity)}`;
+}
+
+async function copyText(text){
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+  const field = document.createElement("textarea");
+  field.value = text;
+  field.style.position = "fixed";
+  field.style.opacity = "0";
+  document.body.appendChild(field);
+  field.select();
+  const copied = document.execCommand("copy");
+  field.remove();
+  if (!copied) throw new Error("Clipboard unavailable");
+}
+
+function createOrderMessage(){
+  const nama = $("nama").value.trim(), alamat = $("alamat").value.trim();
+  const pesanan = Object.entries(cart).map(([id, jumlah]) => {
+    const item = MENU.find(menu => menu.id === Number(id));
+    return `- ${item.nama} x${jumlah}: ${rp(item.harga * jumlah)}`;
+  });
+  const total = Object.entries(cart).reduce((sum, [id, jumlah]) =>
+    sum + MENU.find(item => item.id === Number(id)).harga * jumlah, 0);
+  return ["Halo All Shop, saya ingin memesan:", "", `Nama: ${nama}`, `Alamat: ${alamat}`, "", "Pesanan:", ...pesanan, "", `Total: ${rp(total)}`].join("\n");
 }
 
 function updateDeliveryPoint(lat, lng, label){
@@ -373,13 +476,36 @@ function openCart(open){
 /* ===== EVENT ===== */
 document.addEventListener("click", e => {
   const button = e.target.closest("button");
-  if (!button) return;
+  if (!button){
+    const card = e.target.closest("[data-item]");
+    if (card) openMenuDetail(Number(card.dataset.item));
+    return;
+  }
   const d = button.dataset;
   if (d.k !== undefined){ kategori = d.k; renderFilters(); renderMenu(); }
   if (d.add){ cart[d.add] = (cart[d.add]||0) + 1; renderCart(); toast("Ditambahkan ke keranjang"); }
   if (d.inc){ cart[d.inc]++; renderCart(); }
   if (d.dec){ if(--cart[d.dec] <= 0) delete cart[d.dec]; renderCart(); }
   if (d.resetSearch !== undefined){ $("search").value = ""; kategori = "Semua"; renderFilters(); renderMenu(); }
+  if (d.favorite) toggleFavorite(Number(d.favorite));
+  if (d.shareMenu) openMenuDetail(Number(d.shareMenu), true);
+  if (d.detailQty){
+    detailQuantity = Math.max(1, Math.min(99, detailQuantity + (d.detailQty === "plus" ? 1 : -1)));
+    updateDetailQuantity();
+  }
+  if (d.detailAdd){
+    cart[d.detailAdd] = (cart[d.detailAdd] || 0) + detailQuantity;
+    renderCart(); closeMenuDetail(); toast("Menu ditambahkan ke keranjang");
+  }
+});
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape"){
+    if (!$ ("checkout-backdrop").hidden) closeCheckoutOptions();
+    else if (!$ ("detail-backdrop").hidden) closeMenuDetail();
+  }
+  if ((e.key === "Enter" || e.key === " ") && e.target.matches(".item")){
+    e.preventDefault(); openMenuDetail(Number(e.target.dataset.item));
+  }
 });
 $("search").addEventListener("input", renderMenu);
 $("clear-search").onclick = () => { $("search").value = ""; renderMenu(); $("search").focus(); };
@@ -401,30 +527,50 @@ $("locate-btn").onclick = locateUser;
 $("map-center").onclick = locateUser;
 $("open-cart").onclick = () => openCart(true);
 $("close-cart").onclick = $("overlay").onclick = () => openCart(false);
+$("detail-close").onclick = closeMenuDetail;
+$("detail-backdrop").onclick = e => { if (e.target === $("detail-backdrop")) closeMenuDetail(); };
+$("detail-minus").onclick = () => { detailQuantity = Math.max(1, detailQuantity - 1); updateDetailQuantity(); };
+$("detail-plus").onclick = () => { detailQuantity = Math.min(99, detailQuantity + 1); updateDetailQuantity(); };
+$("detail-favorite").onclick = () => toggleFavorite(activeDetailId);
+$("share-native").onclick = async () => {
+  const item = MENU.find(menu => menu.id === activeDetailId);
+  if (!item) return;
+  if (!navigator.share){ toast("Pilih Facebook, WhatsApp, Instagram, atau salin tautan"); return; }
+  try{ await navigator.share({title:item.nama, text:`${item.nama} - ${rp(item.harga)}`, url:`${location.origin}${location.pathname}#menu-${item.id}`}); }
+  catch(error){ if (error.name !== "AbortError") toast("Menu belum bisa dibagikan"); }
+};
+$("copy-menu-link").onclick = async () => {
+  try{ await copyText($("copy-menu-link").dataset.copyUrl); toast("Tautan menu disalin"); }
+  catch{ toast("Tautan tidak bisa disalin di browser ini"); }
+};
+function openCheckoutOptions(){
+  $("checkout-backdrop").hidden = false;
+  document.body.classList.add("modal-open");
+  $("checkout-whatsapp").focus();
+}
+function closeCheckoutOptions(){
+  $("checkout-backdrop").hidden = true;
+  document.body.classList.remove("modal-open");
+}
+$("checkout-close").onclick = closeCheckoutOptions;
+$("checkout-backdrop").onclick = e => { if (e.target === $("checkout-backdrop")) closeCheckoutOptions(); };
+$("checkout-whatsapp").onclick = () => {
+  window.open(`https://wa.me/6285133968901?text=${encodeURIComponent(createOrderMessage())}`, "_blank", "noopener,noreferrer");
+  closeCheckoutOptions();
+  toast("Pesanan dibuka di WhatsApp. Tekan Kirim untuk mengirimnya.");
+};
+$("checkout-instagram").onclick = () => {
+  const copiedMessage = copyText(createOrderMessage());
+  window.open("https://ig.me/m/ahiebbb", "_blank", "noopener,noreferrer");
+  closeCheckoutOptions();
+  copiedMessage.then(() => toast("Rincian disalin. Tempel di DM Instagram @ahiebbb."))
+    .catch(() => toast("DM Instagram @ahiebbb terbuka. Salin rincian pesanan dari keranjang."));
+};
 
 $("order").onclick = () => {
   const nama = $("nama").value.trim(), alamat = $("alamat").value.trim();
   if (!nama || (!alamat && !selectedCoords)){ toast(!nama ? "Isi nama pemesan dulu" : "Pilih titik peta atau isi alamat antar"); return; }
-  const pesanan = Object.entries(cart).map(([id, jumlah]) => {
-    const menu = MENU.find(item => item.id === Number(id));
-    return `- ${menu.nama} x${jumlah}: ${rp(menu.harga * jumlah)}`;
-  });
-  const total = Object.entries(cart).reduce((jumlah, [id, qty]) =>
-    jumlah + MENU.find(item => item.id === Number(id)).harga * qty, 0);
-  const pesan = [
-    "Halo All Shop, saya ingin memesan:",
-    "",
-    `Nama: ${nama}`,
-    `Alamat: ${alamat}`,
-    "",
-    "Pesanan:",
-    ...pesanan,
-    "",
-    `Total: ${rp(total)}`
-  ].join("\n");
-  const whatsappUrl = `https://wa.me/6285133968901?text=${encodeURIComponent(pesan)}`;
-  window.open(whatsappUrl, "_blank", "noopener,noreferrer");
-  toast("Pesanan dibuka di WhatsApp. Tekan Kirim untuk mengirimnya.");
+  openCheckoutOptions();
 };
 
 initMap();
