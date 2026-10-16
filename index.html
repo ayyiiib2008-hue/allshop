@@ -103,11 +103,16 @@ main{max-width:1160px;margin:0 auto;padding:28px 24px 48px}
 .menu-heading h2{margin:0;font-size:1.22rem}
 .result-count{margin:0;color:var(--muted);font-size:.85rem}
 .grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
-.item{min-width:0;overflow:hidden;border:1px solid var(--line);border-radius:10px;background:var(--card);display:flex;flex-direction:column;transition:transform .18s,border-color .18s}
+.item{position:relative;min-width:0;overflow:hidden;border:1px solid var(--line);border-radius:10px;background:var(--card);display:flex;flex-direction:column;transition:transform .18s,border-color .18s;cursor:pointer}
 .item:hover{transform:translateY(-3px);border-color:#a9c2aa}
 .photo{position:relative;aspect-ratio:1.45;background:#e9eee4;overflow:hidden;display:grid;place-items:center}
 .photo-fallback{position:absolute;font-size:3rem}
 .photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.photo-actions{position:absolute;top:9px;right:9px;z-index:2;display:flex;gap:6px}
+.photo-action{display:grid;width:34px;height:34px;place-items:center;border:0;border-radius:50%;background:#fff;color:#33473a;box-shadow:0 1px 6px #0002}
+.photo-action svg{width:18px;height:18px}
+.photo-action.is-favorite{color:#d6383e}
+.photo-action.is-favorite svg{fill:#d6383e}
 .category-tag{position:absolute;top:9px;left:9px;z-index:1;padding:4px 8px;border-radius:5px;background:#fff;color:#31523b;font-size:.67rem;font-weight:800}
 .item-body{display:flex;flex:1;flex-direction:column;padding:12px;gap:6px}
 .item h3{margin:0;font-size:.98rem;line-height:1.3}
@@ -121,6 +126,42 @@ main{max-width:1160px;margin:0 auto;padding:28px 24px 48px}
 .empty-state{grid-column:1/-1;padding:38px 16px;border:1px dashed var(--line);border-radius:10px;text-align:center;color:var(--muted)}
 .empty-state strong{display:block;margin-bottom:4px;color:var(--text)}
 .reset-link{margin-top:10px;border:0;background:none;color:var(--brand);font:inherit;font-weight:700;text-decoration:underline}
+.dialog-backdrop{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:18px;background:#132018a8}
+.dialog-backdrop[hidden]{display:none}
+.detail-dialog,.checkout-dialog{position:relative;width:min(560px,100%);max-height:min(92vh,860px);overflow:auto;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--text);box-shadow:0 18px 60px #0004}
+.modal-close{position:absolute;top:12px;right:12px;z-index:3;display:grid;width:38px;height:38px;place-items:center;border:0;border-radius:50%;background:#fff;color:#27352b;font-size:1.5rem;box-shadow:0 2px 8px #0002}
+.detail-hero{position:relative;height:250px;overflow:hidden;background:var(--bg)}
+.detail-hero img{width:100%;height:100%;object-fit:cover}
+.detail-hero .photo-fallback{inset:0;display:grid;place-items:center;font-size:4rem}
+.detail-favorite{position:absolute;right:12px;bottom:12px;z-index:2}
+.detail-content{padding:20px}
+.detail-category{margin:0 0 5px;color:var(--accent);font-size:.72rem;font-weight:800;text-transform:uppercase}
+.detail-title-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.detail-title-row h2{margin:0;font-size:1.5rem;line-height:1.2}
+.detail-description{margin:8px 0;color:var(--muted)}
+.detail-meta{display:flex;gap:12px;margin:12px 0;color:var(--muted);font-size:.85rem}
+.detail-meta strong{color:#9b6812}
+.purchase-row{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:16px 0;padding:14px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.detail-price{font-size:1.25rem;font-weight:800}
+.stepper{display:inline-flex;align-items:center;gap:13px;padding:4px;border:1px solid var(--line);border-radius:999px;background:var(--bg)}
+.stepper button{display:grid;width:34px;height:34px;place-items:center;border:0;border-radius:50%;background:var(--card);color:var(--text);font-size:1.15rem}
+.stepper output{min-width:18px;text-align:center;font-weight:800}
+.detail-add{width:100%;min-height:46px;border:0;border-radius:8px;background:var(--brand);color:var(--brand-text);font-weight:800}
+.share-panel{margin-top:18px}
+.share-panel h3{margin:0 0 10px;font-size:.95rem}
+.share-options{display:flex;flex-wrap:wrap;gap:8px}
+.share-option{display:inline-flex;min-height:38px;align-items:center;justify-content:center;gap:7px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--text);font-size:.8rem;font-weight:700;text-decoration:none}
+.share-option svg{width:17px;height:17px}
+.checkout-dialog{width:min(430px,100%);padding:24px}
+.checkout-dialog h2{margin:0 42px 6px 0;font-size:1.35rem}
+.checkout-dialog p{margin:0 0 18px;color:var(--muted);font-size:.9rem}
+.checkout-choices{display:grid;gap:10px}
+.checkout-choice{display:flex;min-height:50px;align-items:center;gap:10px;padding:10px 14px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--text);font:inherit;font-weight:800;text-align:left}
+.checkout-choice svg{width:21px;height:21px}
+.checkout-choice.whatsapp{border-color:#2a9d61;background:#eaf7ef;color:#126b3c}
+.checkout-choice.instagram{border-color:#c4a3bd;background:#f8eef5;color:#8f3d72}
+.checkout-hint{margin:12px 0 0!important;font-size:.78rem!important}
+.modal-open{overflow:hidden}
 
 /* ===== KERANJANG (panel samping) ===== */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;z-index:20}
@@ -167,6 +208,9 @@ input,textarea{width:100%;padding:9px;border:1px solid var(--line);border-radius
   .item p{font-size:.75rem}
   .item-bottom{align-items:flex-end;flex-direction:column}
   .add{width:100%}
+  .detail-hero{height:210px}
+  .detail-content{padding:16px}
+  .share-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media (max-width:380px){
   header{padding:12px 14px;gap:8px}
@@ -240,6 +284,57 @@ input,textarea{width:100%;padding:9px;border:1px solid var(--line);border-radius
   <div class="menu-heading"><h2>Menu favorit</h2><p class="result-count" id="result-count"></p></div>
   <div class="grid" id="menu"></div>
 </main>
+
+<div class="dialog-backdrop" id="detail-backdrop" hidden>
+  <section class="detail-dialog" role="dialog" aria-modal="true" aria-labelledby="detail-name">
+    <button class="modal-close" id="detail-close" type="button" aria-label="Tutup detail">&times;</button>
+    <div class="detail-hero">
+      <span class="photo-fallback" id="detail-icon" aria-hidden="true"></span>
+      <img id="detail-image" alt="">
+      <button class="photo-action detail-favorite" id="detail-favorite" type="button" aria-label="Simpan ke favorit" aria-pressed="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z"/></svg>
+      </button>
+    </div>
+    <div class="detail-content">
+      <p class="detail-category" id="detail-category"></p>
+      <div class="detail-title-row"><h2 id="detail-name"></h2></div>
+      <p class="detail-description" id="detail-description"></p>
+      <div class="detail-meta"><strong id="detail-rating"></strong><span id="detail-time"></span></div>
+      <div class="purchase-row">
+        <span class="detail-price" id="detail-price"></span>
+        <div class="stepper" aria-label="Jumlah pesanan">
+          <button id="detail-minus" type="button" aria-label="Kurangi jumlah">−</button>
+          <output id="detail-quantity" aria-live="polite">1</output>
+          <button id="detail-plus" type="button" aria-label="Tambah jumlah">+</button>
+        </div>
+      </div>
+      <button class="detail-add" id="detail-add" type="button">Tambah ke keranjang</button>
+      <section class="share-panel" aria-label="Bagikan menu">
+        <h3>Bagikan menu</h3>
+        <div class="share-options">
+          <button class="share-option" id="share-native" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.7 10.7 6.6-4.4m-6.6 9.4 6.6 2.2"/></svg>Bagikan</button>
+          <a class="share-option" id="share-facebook" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">f</span>Facebook</a>
+          <a class="share-option" id="share-whatsapp" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">WA</span>WhatsApp</a>
+          <a class="share-option" href="https://www.instagram.com/ahiebbb/" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">IG</span>Instagram</a>
+          <button class="share-option" id="copy-menu-link" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg>Salin tautan</button>
+        </div>
+      </section>
+    </div>
+  </section>
+</div>
+
+<div class="dialog-backdrop" id="checkout-backdrop" hidden>
+  <section class="checkout-dialog" role="dialog" aria-modal="true" aria-labelledby="checkout-title">
+    <button class="modal-close" id="checkout-close" type="button" aria-label="Tutup pilihan">&times;</button>
+    <h2 id="checkout-title">Pilih cara memesan</h2>
+    <p>Rincian pesanan akan disiapkan untuk dikirim ke All Shop.</p>
+    <div class="checkout-choices">
+      <button class="checkout-choice whatsapp" id="checkout-whatsapp" type="button"><span aria-hidden="true">WA</span>Pesan via WhatsApp</button>
+      <button class="checkout-choice instagram" id="checkout-instagram" type="button"><span aria-hidden="true">IG</span>Pesan via Instagram</button>
+    </div>
+    <p class="checkout-hint">Untuk Instagram, rincian disalin agar bisa ditempel di DM @ahiebbb.</p>
+  </section>
+</div>
 
 <div class="overlay" id="overlay"></div>
 <aside id="cart" aria-label="Keranjang belanja">
