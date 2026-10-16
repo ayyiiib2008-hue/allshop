@@ -329,9 +329,9 @@ function initMap(){
   }
   const initial = [-6.2000, 106.8167];
   deliveryMap = L.map("map", {scrollWheelZoom:false}).setView(initial, 13);
-  L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom:19,
-    attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>'
+    attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'
   }).addTo(deliveryMap);
   deliveryMarker = L.marker(initial, {icon:L.divIcon({className:"", html:'<span class="map-marker"><span></span></span>', iconSize:[30,38], iconAnchor:[15,36]})}).addTo(deliveryMap);
   deliveryMarker.setOpacity(.55);
